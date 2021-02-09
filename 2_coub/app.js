@@ -1,14 +1,14 @@
 const vertexShaderText = [
     'precision mediump float;',
     'attribute vec3 vertPosition;',
-    'attribute vec3 vertColor;',
-    'varying vec3 fragColor;',
+    'attribute vec2 vertTexCoord;',
+    'varying vec2 fragTexColor;',
     'uniform mat4 mWorld;', //rotating cube in 3d space
     'uniform mat4 mView;', //camera
     'uniform mat4 mProj;', //prev points
     '',
     'void main() {',
-       'fragColor = vertColor;',
+       'fragTexColor = vertTexCoord;',
        'gl_Position = mProj * mView * mWorld * vec4(vertPosition, 1.0);',
     '}'
 ].join('\n');
@@ -16,9 +16,10 @@ const vertexShaderText = [
 const fragmentShaderText = [
    'precision mediump float;',
    '',
-   'varying vec3 fragColor;',
+   'varying vec2 fragTexColor;',
+   'uniform sampler2D sampler;',
    'void main() {',
-      'gl_FragColor = vec4(fragColor, 1.0);',
+      'gl_FragColor = texture2D(sampler, fragTexColor);',
    '}'
 ].join('\n');
 
@@ -155,21 +156,21 @@ const InitDemo = function () {
 
    //inform that we have vertex
    const positionAttribLocation = gl.getAttribLocation(program, 'vertPosition')
-   const colorAttribLocation = gl.getAttribLocation(program, 'vertColor')
+   const texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexColor')
    gl.vertexAttribPointer(
        positionAttribLocation, //attribute location
        3,  //number of elements per attr
        gl.FLOAT, //type of el
        gl.FALSE,
-       6 * Float32Array.BYTES_PER_ELEMENT, //size of an indiv vertex
+       5 * Float32Array.BYTES_PER_ELEMENT, //size of an indiv vertex
        0  // offset from the beginning of a single vertex to this attribute
    );
    gl.vertexAttribPointer(
-       colorAttribLocation, //attribute location
-       3,  //number of elements per attr
+       texCoordAttribLocation, //attribute location
+       2,  //number of elements per attr
        gl.FLOAT, //type of el
        gl.FALSE,
-       6 * Float32Array.BYTES_PER_ELEMENT, //size of an indiv vertex
+       5 * Float32Array.BYTES_PER_ELEMENT, //size of an indiv vertex
        3 * Float32Array.BYTES_PER_ELEMENT  // offset from the beginning of a single vertex to this attribute
    );
 
