@@ -79,45 +79,46 @@ const InitDemo = function () {
    }
 
    //create buffer
-   const boxVertices = [ // X, Y, Z           R, G, B
-      // Top
-      -1.0, 1.0, -1.0,   0.5, 0.5, 0.5,
-      -1.0, 1.0, 1.0,    0.5, 0.5, 0.5,
-      1.0, 1.0, 1.0,     0.5, 0.5, 0.5,
-      1.0, 1.0, -1.0,    0.5, 0.5, 0.5,
+   var boxVertices =
+       [ // X, Y, Z           U, V
+          // Top
+          -1.0, 1.0, -1.0,   0, 0,
+          -1.0, 1.0, 1.0,    0, 1,
+          1.0, 1.0, 1.0,     1, 1,
+          1.0, 1.0, -1.0,    1, 0,
 
-      // Left
-      -1.0, 1.0, 1.0,    0.75, 0.25, 0.5,
-      -1.0, -1.0, 1.0,   0.75, 0.25, 0.5,
-      -1.0, -1.0, -1.0,  0.75, 0.25, 0.5,
-      -1.0, 1.0, -1.0,   0.75, 0.25, 0.5,
+          // Left
+          -1.0, 1.0, 1.0,    0, 0,
+          -1.0, -1.0, 1.0,   1, 0,
+          -1.0, -1.0, -1.0,  1, 1,
+          -1.0, 1.0, -1.0,   0, 1,
 
-      // Right
-      1.0, 1.0, 1.0,    0.25, 0.25, 0.75,
-      1.0, -1.0, 1.0,   0.25, 0.25, 0.75,
-      1.0, -1.0, -1.0,  0.25, 0.25, 0.75,
-      1.0, 1.0, -1.0,   0.25, 0.25, 0.75,
+          // Right
+          1.0, 1.0, 1.0,    1, 1,
+          1.0, -1.0, 1.0,   0, 1,
+          1.0, -1.0, -1.0,  0, 0,
+          1.0, 1.0, -1.0,   1, 0,
 
-      // Front
-      1.0, 1.0, 1.0,    1.0, 0.0, 0.15,
-      1.0, -1.0, 1.0,    1.0, 0.0, 0.15,
-      -1.0, -1.0, 1.0,    1.0, 0.0, 0.15,
-      -1.0, 1.0, 1.0,    1.0, 0.0, 0.15,
+          // Front
+          1.0, 1.0, 1.0,    1, 1,
+          1.0, -1.0, 1.0,    1, 0,
+          -1.0, -1.0, 1.0,    0, 0,
+          -1.0, 1.0, 1.0,    0, 1,
 
-      // Back
-      1.0, 1.0, -1.0,    0.0, 1.0, 0.15,
-      1.0, -1.0, -1.0,    0.0, 1.0, 0.15,
-      -1.0, -1.0, -1.0,    0.0, 1.0, 0.15,
-      -1.0, 1.0, -1.0,    0.0, 1.0, 0.15,
+          // Back
+          1.0, 1.0, -1.0,    0, 0,
+          1.0, -1.0, -1.0,    0, 1,
+          -1.0, -1.0, -1.0,    1, 1,
+          -1.0, 1.0, -1.0,    1, 0,
 
-      // Bottom
-      -1.0, -1.0, -1.0,   0.5, 0.5, 1.0,
-      -1.0, -1.0, 1.0,    0.5, 0.5, 1.0,
-      1.0, -1.0, 1.0,     0.5, 0.5, 1.0,
-      1.0, -1.0, -1.0,    0.5, 0.5, 1.0,
-   ];
+          // Bottom
+          -1.0, -1.0, -1.0,   1, 1,
+          -1.0, -1.0, 1.0,    1, 0,
+          1.0, -1.0, 1.0,     0, 0,
+          1.0, -1.0, -1.0,    0, 1,
+       ];
 
-   var boxIndices =
+   const boxIndices =
        [
           // Top
           0, 1, 2,
@@ -144,8 +145,6 @@ const InitDemo = function () {
           22, 20, 23
        ];
 
-
-
    let boxVertexBufferObject = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(boxVertices), gl.STATIC_DRAW);
@@ -156,7 +155,7 @@ const InitDemo = function () {
 
    //inform that we have vertex
    const positionAttribLocation = gl.getAttribLocation(program, 'vertPosition')
-   const texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexColor')
+   const texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexCoord')
    gl.vertexAttribPointer(
        positionAttribLocation, //attribute location
        3,  //number of elements per attr
@@ -175,7 +174,21 @@ const InitDemo = function () {
    );
 
    gl.enableVertexAttribArray(positionAttribLocation)
-   gl.enableVertexAttribArray(colorAttribLocation)
+   gl.enableVertexAttribArray(texCoordAttribLocation)
+
+   //texture
+   const boxTexture = gl.createTexture()
+   gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+   gl.texImage2D(
+       gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
+       gl.UNSIGNED_BYTE,
+       document.getElementById('crate-image')
+   );
+   gl.bindTexture(gl.TEXTURE_2D, null);
 
    gl.useProgram(program)
 
@@ -188,7 +201,7 @@ const InitDemo = function () {
    const projMatrix = new Float32Array(16)
    mat4.identity(worldMatrix);
    mat4.lookAt(viewMatrix, [0, 0, -6], [0, 0, 0], [0, 1, 0])
-   mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.width / canvas.height, 0.1, 1000.0);
+   mat4.perspective(projMatrix, glMatrix.toRadian(45), canvas.clientWidth / canvas.clientHeight, 0.1, 1000.0);
 
    gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
    gl.uniformMatrix4fv(matViewUniformLocation, gl.FALSE, viewMatrix);
@@ -205,12 +218,16 @@ const InitDemo = function () {
       angle = performance.now() / 1000 / 6 * 2 * Math.PI;
       mat4.rotate(yRotationMatrix, identityMatrix, angle, [0,1,0]);
       mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1,0,0]);
-      mat4.mul(worldMatrix, xRotationMatrix, yRotationMatrix)
+      mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix)
       gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
 
       gl.clearColor(0.75, 0.85, 0.8, 1.0);
       gl.clear(gl.DEPTH_BUFFER_BIT | gl.COLOR_BUFFER_BIT);
-      gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0)
+
+      gl.bindTexture(gl.TEXTURE_2D, boxTexture);
+      gl.activeTexture(gl.TEXTURE0);
+
+      gl.drawElements(gl.TRIANGLES, boxIndices.length, gl.UNSIGNED_SHORT, 0);
 
       requestAnimationFrame(loop);
    }
