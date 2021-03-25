@@ -54,5 +54,33 @@
     }
     stopAnimation({type: 'click'});
 
+    //work with filters
+    let mask = [true, true, true];
+    let redToggle = document.querySelector('#filterRed');
+    let greenToggle = document.querySelector('#filterGreen');
+    let blueToggle = document.querySelector('#filterBlue');
+
+    redToggle.addEventListener('click', setColorMask, false)
+    greenToggle.addEventListener('click', setColorMask, false)
+    blueToggle.addEventListener('click', setColorMask, false)
+
+    function setColorMask(evt) {
+        let index = evt.target === greenToggle && 1
+            || evt.target === blueToggle && 2
+            || 0;
+
+        mask[index] = !mask[index];
+        if (mask[index] === true)
+            evt.target.textContent = 'on';
+        else
+            evt.target.textContent = 'off';
+        gl.colorMask(mask[0], mask[1], mask[2], true);
+        drawAnimation();
+    }
+    function drawAnimation() {
+        let color = getRandomColor();
+        gl.clearColor(color[0], color[1], color[2], 1.0);
+        gl.clear(gl.COLOR_BUFFER_BIT)
+    }
 
 })();

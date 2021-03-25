@@ -21,3 +21,16 @@ button {
   margin: 1rem;
   border: none;
 }
+
+.mask-buttons {
+  color: white;
+}
+.mask-buttons__btn--red {
+  background: red;
+}
+.mask-buttons__btn--blue {
+  background: blue;
+}
+.mask-buttons__btn--green {
+  background: green;
+}
