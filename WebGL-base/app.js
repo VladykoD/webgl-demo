@@ -2,6 +2,11 @@
     //detect webgl
     let canvas = document.createElement('canvas');
     document.body.appendChild(canvas);
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
     let gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 
     if (!gl) {
@@ -82,5 +87,13 @@
         gl.clearColor(color[0], color[1], color[2], 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT)
     }
+
+
+    // clipping
+    gl.enable(gl.SCISSOR_TEST);
+    gl.scissor(50, 50, width - 100, height - 100);
+
+    gl.clearColor(1.0, 1.0, 1.0, 1.0);
+    gl.clear(gl.COLOR_BUFFER_BIT)
 
 })();
