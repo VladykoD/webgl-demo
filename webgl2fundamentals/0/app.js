@@ -2,19 +2,25 @@
 
 window.addEventListener('load', setupWebGL, false);
 
-let gl, program;
 let vertexShaderSource = `#version 300 es
  
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
-in vec4 a_position;
+in vec2 a_position;
+uniform vec2 u_resolution;
  
 // all shaders have a main function
 void main() {
- 
-  // gl_Position is a special variable a vertex shader
-  // is responsible for setting
-  gl_Position = a_position;
+   // convert the position from pixels to 0.0 to 1.0
+  vec2 zeroToOne = a_position / u_resolution;
+
+  // convert from 0->1 to 0->2
+  vec2 zeroToTwo = zeroToOne * 2.0;
+
+  // convert from 0->2 to -1->+1 (clipspace)
+  vec2 clipSpace = zeroToTwo - 1.0;
+
+  gl_Position = vec4(clipSpace, 0, 1);
 }
 `;
 
@@ -58,10 +64,15 @@ function setupWebGL(evt) {
    // through the bind point.
    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
+   let resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
+
    let positions = [
-       0, 0,
-       0, 0.5,
-       0.7, 0,
+       10, 20,
+       80, 20,
+       10, 30,
+       10, 30,
+       80, 20,
+       80, 30,
    ];
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -87,10 +98,11 @@ function setupWebGL(evt) {
    gl.clear(gl.COLOR_BUFFER_BIT);
 
    gl.useProgram(program);
+   gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
    gl.bindVertexArray(vao);
 
    let primitiveType = gl.TRIANGLES;
-   let count = 3;
+   let count = 6;
    gl.drawArrays(primitiveType, offset, count);
 
 
