@@ -67,12 +67,21 @@ function setupWebGL(evt) {
    let resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
 
    let positions = [
-       10, 20,
-       80, 20,
-       10, 30,
-       10, 30,
-       80, 20,
-       80, 30,
+       30, 30,
+       60, 30,
+       30, 60,
+
+       30, 60,
+       30, 90,
+       60, 90,
+
+       60, 90,
+       90, 90,
+       90, 60,
+
+       90, 60,
+       90, 30,
+       60, 30,
    ];
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
@@ -102,7 +111,7 @@ function setupWebGL(evt) {
    gl.bindVertexArray(vao);
 
    let primitiveType = gl.TRIANGLES;
-   let count = 6;
+   let count = 12;
    gl.drawArrays(primitiveType, offset, count);
 
 
