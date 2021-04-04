@@ -20,7 +20,7 @@ void main() {
   // convert from 0->2 to -1->+1 (clipspace)
   vec2 clipSpace = zeroToTwo - 1.0;
 
-  gl_Position = vec4(clipSpace, 0, 1);
+  gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
 }
 `;
 
@@ -29,13 +29,15 @@ let fragmentShaderSource = `#version 300 es
 // fragment shaders don't have a default precision so we need
 // to pick one. highp is a good default. It means "high precision"
 precision highp float;
+
+uniform vec4 u_color;
  
 // we need to declare an output for the fragment shader
 out vec4 outColor;
  
 void main() {
   // Just set the output to a constant reddish-purple
-  outColor = vec4(1, 0, 0.5, 1);
+  outColor = u_color;
 }
 `;
 
@@ -57,38 +59,21 @@ function setupWebGL(evt) {
    // is something you should do during initialization,
    // not in your render loop.
    let positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
+
+   let resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution')
+   let colorLocation = gl.getUniformLocation(program, 'u_color');
+
    let positionBuffer = gl.createBuffer();
-
-   //First you bind a resource to a bind point.
-   // Then, all other functions refer to the resource
-   // through the bind point.
-   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-   let resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
-
-   let positions = [
-       30, 30,
-       60, 30,
-       30, 60,
-
-       30, 60,
-       30, 90,
-       60, 90,
-
-       60, 90,
-       90, 90,
-       90, 60,
-
-       90, 60,
-       90, 30,
-       60, 30,
-   ];
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
 
    //vao = Vertex Array Object
    let vao = gl.createVertexArray();
    gl.bindVertexArray(vao);
    gl.enableVertexAttribArray(positionAttributeLocation);
+
+   //First you bind a resource to a bind point.
+   // Then, all other functions refer to the resource
+   // through the bind point.
+   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
    //pull the data out
    let size = 2;  // 2 components per iteration
@@ -107,18 +92,46 @@ function setupWebGL(evt) {
    gl.clear(gl.COLOR_BUFFER_BIT);
 
    gl.useProgram(program);
-   gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
    gl.bindVertexArray(vao);
-
-   let primitiveType = gl.TRIANGLES;
-   let count = 12;
-   gl.drawArrays(primitiveType, offset, count);
+   gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height);
 
 
+   for (let ii = 0; ii < 50; ++ii) {
+      setRectangle(
+          gl, randomInt(300), randomInt(300), randomInt(300), randomInt(300)
+      );
 
+      gl.uniform4f(colorLocation, Math.random(),Math.random(),Math.random(),1 )
+
+      let primitiveType = gl.TRIANGLES;
+      let offset = 0;
+      let count = 6;
+      gl.drawArrays(primitiveType, offset, count);
+   }
 
 
 }
+
+function randomInt(range) {
+   return Math.floor(Math.random() * range);
+}
+
+function setRectangle(gl, x, y, width, height) {
+   let x1 = x;
+   let x2 = x + width;
+   let y1 = y;
+   let y2 = y + height;
+
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+      x1, y1,
+      x2, y1,
+      x1, y2,
+      x1, y2,
+      x2, y1,
+      x2, y2]), gl.STATIC_DRAW)
+}
+
+
 
 
 function createShader(gl, type, source) {
