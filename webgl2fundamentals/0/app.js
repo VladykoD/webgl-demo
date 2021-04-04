@@ -101,15 +101,13 @@ function setupWebGL(evt) {
           gl, randomInt(300), randomInt(300), randomInt(300), randomInt(300)
       );
 
-      gl.uniform4f(colorLocation, Math.random(),Math.random(),Math.random(),1 )
+      gl.uniform4f(colorLocation, Math.random(), Math.random(), Math.random(), 1)
 
       let primitiveType = gl.TRIANGLES;
       let offset = 0;
       let count = 6;
       gl.drawArrays(primitiveType, offset, count);
    }
-
-
 }
 
 function randomInt(range) {
