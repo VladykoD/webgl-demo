@@ -8,3 +8,10 @@ canvas {
   width: 100vw;
   height: 100vh;
 }
+
+
+#uiContainer {
+  position: fixed;
+  top: 50px;
+  left: 50px;
+}

@@ -31,13 +31,51 @@ precision highp float;
 //our texture
 uniform sampler2D u_image;
 
+uniform float u_kernel[9];
+uniform float u_kernelWeight;
+
 in vec2 v_texCoord;
+
 out vec4 outColor;
  
 void main() {
-  outColor = texture(u_image, v_texCoord);
+  vec2 onePixel = vec2(1) / vec2(textureSize(u_image, 0));
+ 
+  vec4 colorSum =
+      texture(u_image, v_texCoord + onePixel * vec2(-1, -1)) * u_kernel[0] +
+      texture(u_image, v_texCoord + onePixel * vec2( 0, -1)) * u_kernel[1] +
+      texture(u_image, v_texCoord + onePixel * vec2( 1, -1)) * u_kernel[2] +
+      texture(u_image, v_texCoord + onePixel * vec2(-1,  0)) * u_kernel[3] +
+      texture(u_image, v_texCoord + onePixel * vec2( 0,  0)) * u_kernel[4] +
+      texture(u_image, v_texCoord + onePixel * vec2( 1,  0)) * u_kernel[5] +
+      texture(u_image, v_texCoord + onePixel * vec2(-1,  1)) * u_kernel[6] +
+      texture(u_image, v_texCoord + onePixel * vec2( 0,  1)) * u_kernel[7] +
+      texture(u_image, v_texCoord + onePixel * vec2( 1,  1)) * u_kernel[8] ;
+  outColor = vec4((colorSum / u_kernelWeight).rgb, 1);
 }
 `;
+
+
+/*
+   //change canals on image
+   outColor = texture(u_image, v_texCoord).bgra;
+
+
+//simple motion effect
+precision highp float;
+uniform sampler2D u_image;
+in vec2 v_texCoord;
+out vec4 outColor;
+
+void main() {
+   vec2 onePixel = vec2(4) / vec2(textureSize(u_image,0));
+
+  outColor = (
+      texture(u_image, v_texCoord) +
+      texture(u_image, v_texCoord + vec2( onePixel.x, 0.0)) +
+      texture(u_image, v_texCoord + vec2(-onePixel.x, 0.0))) / 3.0;
+}
+ */
 
 
 let image = new Image();
@@ -68,6 +106,8 @@ function render(image) {
    //uniforms
    let resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
    let imageLocation = gl.getUniformLocation(program, 'u_image');
+   let kernelLocation = gl.getUniformLocation(program, "u_kernel[0]");
+   let kernelWeightLocation = gl.getUniformLocation(program, "u_kernelWeight");
 
    //vao = Vertex Array Object
    let vao = gl.createVertexArray();
@@ -115,27 +155,162 @@ function render(image) {
    let srcType = gl.UNSIGNED_BYTE;
    gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat,
        srcFormat, srcType, image);
-
-   canvas.width = canvas.clientWidth;
-   canvas.height = canvas.clientHeight;
-
-   gl.viewport(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight)
-   gl.clearColor(0, 0, 0, 0);
-   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-   gl.useProgram(program);
-   gl.bindVertexArray(vao);
-
-   gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
-
-   gl.uniform1i(imageLocation, 0);
    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
    setRectangle(gl, 0,0,gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-   let primitiveType = gl.TRIANGLES;
-   let count = 6;
-   gl.drawArrays(primitiveType, offset, count);
+   // Define several convolution kernels
+   let kernels = {
+      normal: [
+         0, 0, 0,
+         0, 1, 0,
+         0, 0, 0,
+      ],
+      gaussianBlur: [
+         0.045, 0.122, 0.045,
+         0.122, 0.332, 0.122,
+         0.045, 0.122, 0.045,
+      ],
+      gaussianBlur2: [
+         1, 2, 1,
+         2, 4, 2,
+         1, 2, 1,
+      ],
+      gaussianBlur3: [
+         0, 1, 0,
+         1, 1, 1,
+         0, 1, 0,
+      ],
+      unsharpen: [
+         -1, -1, -1,
+         -1,  9, -1,
+         -1, -1, -1,
+      ],
+      sharpness: [
+         0, -1,  0,
+         -1,  5, -1,
+         0, -1,  0,
+      ],
+      sharpen: [
+         -1, -1, -1,
+         -1, 16, -1,
+         -1, -1, -1,
+      ],
+      edgeDetect: [
+         -0.125, -0.125, -0.125,
+         -0.125,  1,     -0.125,
+         -0.125, -0.125, -0.125,
+      ],
+      edgeDetect2: [
+         -1, -1, -1,
+         -1,  8, -1,
+         -1, -1, -1,
+      ],
+      edgeDetect3: [
+         -5, 0, 0,
+         0, 0, 0,
+         0, 0, 5,
+      ],
+      edgeDetect4: [
+         -1, -1, -1,
+         0,  0,  0,
+         1,  1,  1,
+      ],
+      edgeDetect5: [
+         -1, -1, -1,
+         2,  2,  2,
+         -1, -1, -1,
+      ],
+      edgeDetect6: [
+         -5, -5, -5,
+         -5, 39, -5,
+         -5, -5, -5,
+      ],
+      sobelHorizontal: [
+         1,  2,  1,
+         0,  0,  0,
+         -1, -2, -1,
+      ],
+      sobelVertical: [
+         1,  0, -1,
+         2,  0, -2,
+         1,  0, -1,
+      ],
+      previtHorizontal: [
+         1,  1,  1,
+         0,  0,  0,
+         -1, -1, -1,
+      ],
+      previtVertical: [
+         1,  0, -1,
+         1,  0, -1,
+         1,  0, -1,
+      ],
+      boxBlur: [
+         0.111, 0.111, 0.111,
+         0.111, 0.111, 0.111,
+         0.111, 0.111, 0.111,
+      ],
+      triangleBlur: [
+         0.0625, 0.125, 0.0625,
+         0.125,  0.25,  0.125,
+         0.0625, 0.125, 0.0625,
+      ],
+      emboss: [
+         -2, -1,  0,
+         -1,  1,  1,
+         0,  1,  2,
+      ],
+   };
+
+   let initialSelection = 'emboss';
+
+   let ui = document.querySelector('#ui');
+   let select = document.createElement('select');
+   for(let name in kernels) {
+      let option = document.createElement('option');
+      option.value = name;
+
+      if(name === initialSelection) {
+         option.selected = true;
+      }
+      option.appendChild(document.createTextNode(name));
+      select.appendChild(option);
+   }
+   select.onchange = function () {
+      drawWithKernel(this.options[this.selectedIndex].value);
+   };
+   ui.appendChild(select);
+
+   drawWithKernel(initialSelection);
+
+
+   function computeKernelWeight(kernel) {
+      let weight = kernel.reduce(function (prev, curr) {
+         return prev + curr;
+      });
+      return weight <= 0 ? 1 : weight;
+   }
+
+   function drawWithKernel(name) {
+      gl.viewport(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight)
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      gl.useProgram(program);
+      gl.bindVertexArray(vao);
+
+      gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      gl.uniform1i(imageLocation, 0);
+
+      gl.uniform1fv(kernelLocation, kernels[name]);
+      gl.uniform1f(kernelWeightLocation, computeKernelWeight(kernels[name]));
+
+
+      let primitiveType = gl.TRIANGLES;
+      let count = 6;
+      gl.drawArrays(primitiveType, offset, count);
+   }
 }
 
 function setRectangle(gl, x, y, width, height) {
@@ -180,3 +355,4 @@ function createProgram(gl, vertexShader, fragmentShader) {
    console.log(gl.getShaderInfoLog(program));
    gl.deleteProgram(program)
 }
+
