@@ -78,10 +78,11 @@ void main() {
 }
  */
 
-
 let image = new Image();
 image.src = './image_tex.jpg';
 image.onload = function () {
+   image.width = window.innerWidth;
+   image.height = window.innerHeight;
    render(image);
 };
 
@@ -109,10 +110,12 @@ function render(image) {
    let imageLocation = gl.getUniformLocation(program, 'u_image');
    let kernelLocation = gl.getUniformLocation(program, "u_kernel[0]");
    let kernelWeightLocation = gl.getUniformLocation(program, "u_kernelWeight");
+   let flipYLocation = gl.getUniformLocation(program, 'u_flipY');
 
    //vao = Vertex Array Object
    let vao = gl.createVertexArray();
    gl.bindVertexArray(vao);
+
    let positionBuffer = gl.createBuffer();
    gl.enableVertexAttribArray(positionAttributeLocation);
    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
@@ -123,13 +126,15 @@ function render(image) {
    let normalize = false;
    let stride = 0;
    let offset = 0;
-   gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
+   gl.vertexAttribPointer(
+       positionAttributeLocation,
+       size, type, normalize, stride, offset);
 
    let texCoordBuffer = gl.createBuffer();
    gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      0, 0,
-      1.0, 0,
+      0.0, 0.0,
+      1.0, 0.0,
       0.0, 1.0,
       0.0, 1.0,
       1.0, 0.0,
@@ -140,25 +145,72 @@ function render(image) {
 
    gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
 
-   let texture = gl.createTexture();
-   gl.activeTexture(gl.TEXTURE0 + 0);
 
-   gl.bindTexture(gl.TEXTURE_2D, texture);
+   function createAndSetupTexture(gl) {
+      let texture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, texture);
 
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-   let mipLevel = 0; //largest mip
-   let internalFormat = gl.RGBA; //format we want in the texture
+      return texture;
+   }
+
+   //create a texture and put the image in it
+   let originalImageTexture = createAndSetupTexture(gl);
+
+   //upload the image into the texture
+   let mipLevel = 0;
+   let internalFormat = gl.RGBA;
    let srcFormat = gl.RGBA;
    let srcType = gl.UNSIGNED_BYTE;
-   gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat,
-       srcFormat, srcType, image);
+   gl.texImage2D(gl.TEXTURE_2D,
+       mipLevel,
+       internalFormat,
+       srcFormat,
+       srcType,
+       image);
+
+   //create 2 textures and attach them to framebuffers
+   let textures = [];
+   let framebuffers = [];
+   for (let ii=0; ii<2; ++ii) {
+      let texture = createAndSetupTexture(gl);
+      textures.push(texture);
+
+      //make the texture the same size as the image
+      let mipLevel = 0; //largest mip
+      let internalFormat = gl.RGBA; //what we want in the texture
+      let border = 0; //must be 0
+      let srcFormat = gl.RGBA; //format of data we are supplying
+      let srcType = gl.UNSIGNED_BYTE; //type of data we are supplying
+      let data = null; // no data = create a blank texture
+      gl.texImage2D(
+          gl.TEXTURE_2D,
+          mipLevel,
+          internalFormat,
+          image.width,
+          image.height,
+          border,
+          srcFormat,
+          srcType,
+          data);
+
+      //create a framebuffer
+      let fbo = gl.createFramebuffer();
+      framebuffers.push(fbo);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+      //attach a texture to it
+      let attachmentPoint = gl.COLOR_ATTACHMENT0;
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, mipLevel);
+   }
+
    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 
-   setRectangle(gl, 0,0,gl.drawingBufferWidth, gl.drawingBufferHeight);
+   setRectangle(gl, 0,0, image.width, image.height);
 
    // Define several convolution kernels
    let kernels = {
@@ -264,26 +316,59 @@ function render(image) {
       ],
    };
 
-   let initialSelection = 'emboss';
+   var effects = [
+      { name: "normal" },
+      { name: "gaussianBlur" },
+      { name: "gaussianBlur2", on: true },
+      { name: "gaussianBlur3", on: true },
+      { name: "unsharpen" },
+      { name: "sharpness", on: true },
+      { name: "sharpen" },
+      { name: "edgeDetect" },
+      { name: "edgeDetect2" },
+      { name: "edgeDetect3"},
+      { name: "edgeDetect4" },
+      { name: "edgeDetect5" },
+      { name: "edgeDetect6" },
+      { name: "sobelHorizontal" },
+      { name: "sobelVertical" },
+      { name: "previtHorizontal" },
+      { name: "previtVertical" },
+      { name: "boxBlur" },
+      { name: "triangleBlur" },
+      { name: "emboss" },
+   ];
 
    let ui = document.querySelector('#ui');
-   let select = document.createElement('select');
-   for(let name in kernels) {
-      let option = document.createElement('option');
-      option.value = name;
+   let table = document.createElement('table');
+   let tbody = document.createElement('tbody');
 
-      if(name === initialSelection) {
-         option.selected = true;
+   for (let ii=0; ii<effects.length; ++ii) {
+      let effect = effects[ii];
+      let tr = document.createElement('tr');
+      let td = document.createElement('td');
+      let chk = document.createElement('input');
+      let label = document.createElement('label');
+      chk.id = effect.name;
+      chk.value = effect.name;
+      chk.type = 'checkbox';
+      label.setAttribute('for', effect.name);
+
+      if (effect.on) {
+         chk.checked = 'true';
       }
-      option.appendChild(document.createTextNode(name));
-      select.appendChild(option);
+      chk.onchange = drawEffects;
+      td.appendChild(chk);
+      label.appendChild(document.createTextNode(effect.name));
+      td.appendChild(label);
+      tr.appendChild(td);
+      tbody.appendChild(tr);
    }
-   select.onchange = function () {
-      drawWithKernel(this.options[this.selectedIndex].value);
-   };
-   ui.appendChild(select);
+   table.appendChild(tbody);
+   ui.appendChild(table);
+   //$("#ui table").tableDnD({onDrop: drawEffects});
 
-   drawWithKernel(initialSelection);
+   drawEffects();
 
 
    function computeKernelWeight(kernel) {
@@ -293,23 +378,75 @@ function render(image) {
       return weight <= 0 ? 1 : weight;
    }
 
-   function drawWithKernel(name) {
-      gl.viewport(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight)
+
+   function drawEffects() {
+      resizeCanvasToDisplaySize(gl.canvas);
+      gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
       gl.useProgram(program);
       gl.bindVertexArray(vao);
 
-      gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
+      //start with the original image on unit 0
+      gl.activeTexture(gl.TEXTURE0 + 0);
+      gl.bindTexture(gl.TEXTURE_2D, originalImageTexture);
+
+      // Tell the shader to get the texture from texture unit 0
       gl.uniform1i(imageLocation, 0);
 
+      //tell the shader to get the texture from texture unit 0
+      gl.uniform1f(flipYLocation, 1);
+
+      //loop through each effect we want to apply
+      let count = 0;
+      for (let ii = 0; ii < tbody.rows.length; ++ii) {
+         let checkbox = tbody.rows[ii].firstChild.firstChild;
+
+         if (checkbox.checked) {
+            //setup to draw into one of the framebuffer
+            setFramebuffer(framebuffers[count % 2], image.width, image.height);
+
+            drawWithKernel(checkbox.value);
+
+            // for the next draw, use the texture we just rendered to.
+            gl.bindTexture(gl.TEXTURE_2D, textures[count % 2]);
+
+            ++count;
+         }
+      }
+
+      //finally draw the result to the canvas
+      gl.uniform1f(flipYLocation, -1);
+      setFramebuffer(null, gl.canvas.width, gl.canvas.height);
+
+      // Clear the canvas
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+
+      drawWithKernel("normal");
+   }
+
+   function setFramebuffer(fbo, width, height) {
+      //make this the framebuffer we are rendering to
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+
+      //tell the shader the resolution of the framebuffer
+      gl.uniform2f(resolutionLocation, width, height);
+
+      //tell webgl how to convert from clip space to pixels
+      gl.viewport(0,0,width,height)
+   }
+
+   function drawWithKernel(name) {
       gl.uniform1fv(kernelLocation, kernels[name]);
       gl.uniform1f(kernelWeightLocation, computeKernelWeight(kernels[name]));
 
-
       let primitiveType = gl.TRIANGLES;
       let count = 6;
+      let offset = 0;
       gl.drawArrays(primitiveType, offset, count);
    }
 }
@@ -357,3 +494,14 @@ function createProgram(gl, vertexShader, fragmentShader) {
    gl.deleteProgram(program)
 }
 
+function resizeCanvasToDisplaySize(canvas, multiplier) {
+   multiplier = multiplier || 1;
+   const width  = canvas.clientWidth  * multiplier | 0;
+   const height = canvas.clientHeight * multiplier | 0;
+   if (canvas.width !== width ||  canvas.height !== height) {
+      canvas.width  = width;
+      canvas.height = height;
+      return true;
+   }
+   return false;
+}
