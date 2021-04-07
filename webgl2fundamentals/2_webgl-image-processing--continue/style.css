@@ -12,6 +12,14 @@ canvas {
 
 #uiContainer {
   position: fixed;
-  top: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+  max-height: 80vh;
+  overflow-y: auto;
   left: 50px;
+}
+
+table {
+  background: #fff;
+  padding: 10px;
 }
