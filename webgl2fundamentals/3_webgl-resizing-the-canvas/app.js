@@ -63,6 +63,9 @@ void main() {
    requestAnimationFrame(drawScene);
 
    function drawScene(now) {
+      resizeCanvasToDisplaySize(gl.canvas);
+      gl.viewport(0,0,gl.canvas.width, gl.canvas.height)
+
       now *= 0.001;
 
       gl.useProgram(program);
@@ -70,7 +73,7 @@ void main() {
 
       let matrix = m3.rotation(now);
       gl.uniformMatrix3fv(matrixLocation, false, matrix);
-      gl.uniform4fv(colorLocation, [1, 1, 0, 1]);
+      gl.uniform4fv(colorLocation, [0, 1, 0, 1]);
 
       let primitiveType = gl.LINES;
       let offset = 0;
@@ -79,4 +82,61 @@ void main() {
 
       requestAnimationFrame(drawScene);
    }
+
+
+   const canvasToDisplaySizeMap = new Map([[canvas, [300, 150]]]);
+   function onResize(entries) {
+      for (const entry of entries) {
+         let width, height;
+         let dpr = window.devicePixelRatio;
+
+         if (entry.devicePixelContentBoxSize) {
+            width = entry.devicePixelContentBoxSize[0].inlineSize;
+            height = entry.devicePixelContentBoxSize[0].blockSize;
+            dpr = 1;
+         } else if(entry.contentBoxSize) {
+            if(entry.contentBoxSize[0]) {
+               width = entry.contentBoxSize[0].inlineSize;
+               height = entry.contentBoxSize[0].blockSize;
+            } else {
+               width = entry.contentBoxSize.inlineSize;
+               height = entry.contentBoxSize.blockSize;
+            }
+         } else {
+            width = entry.contentRect.width;
+            height = entry.contentRect.height;
+         }
+
+         const displayWidth = Math.round(width * dpr);
+         const displayHeight = Math.round(height * dpr);
+
+         canvasToDisplaySizeMap.set(entry.target, [displayWidth, displayHeight])
+      }
+   }
+
+   const resizeObserver = new ResizeObserver(onResize);
+   resizeObserver.observe(canvas, {box: 'content-box'});
+
+   function resizeCanvasToDisplaySize(canvas) {
+      /*
+      const dpr = window.devicePixelRatio;
+      const displayWidth = Math.round(canvas.clientWidth * dpr);
+      const displayHeight = Math.round(canvas.clientHeight * dpr);
+       */
+
+      const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas);
+
+      const needResize = canvas.width !== displayWidth
+          || canvas.height !== displayHeight;
+
+      if (needResize) {
+         canvas.width = displayWidth;
+         canvas.height = displayHeight;
+      }
+
+      return needResize;
+   }
+
 })();
+
+
