@@ -88,12 +88,13 @@
         gl.clear(gl.COLOR_BUFFER_BIT)
     }
 
-
     // clipping
+    /*
     gl.enable(gl.SCISSOR_TEST);
     gl.scissor(50, 50, width - 100, height - 100);
 
     gl.clearColor(1.0, 1.0, 1.0, 1.0);
     gl.clear(gl.COLOR_BUFFER_BIT)
+*/
 
 })();
