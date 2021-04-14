@@ -118,12 +118,6 @@ void main() {
    resizeObserver.observe(canvas, {box: 'content-box'});
 
    function resizeCanvasToDisplaySize(canvas) {
-      /*
-      const dpr = window.devicePixelRatio;
-      const displayWidth = Math.round(canvas.clientWidth * dpr);
-      const displayHeight = Math.round(canvas.clientHeight * dpr);
-       */
-
       const [displayWidth, displayHeight] = canvasToDisplaySizeMap.get(canvas);
 
       const needResize = canvas.width !== displayWidth

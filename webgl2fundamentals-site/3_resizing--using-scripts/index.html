@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>resize</title>
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!--  https://webgl2fundamentals.org/webgl/lessons/webgl-2d-translation.html -->
+
+
+    <canvas>Your browser does not seem to support HTML5 canvas.</canvas>
+
+
+    <script type="x-shader/x-vertex" id="vertex-shader">#version 300 es
+    in vec2 a_position;
+
+    uniform mat3 u_matrix;
+
+    void main() {
+        // Multiply the position by the matrix.
+        gl_Position = vec4((u_matrix * vec3(a_position, 1)).xy, 0, 1);
+    }
+    </script>
+
+    <script type="x-shader/x-fragment" id="fragment-shader">#version 300 es
+    precision highp float;
+
+    uniform vec4 u_color;
+
+    out vec4 outColor;
+
+    void main() {
+        outColor = u_color;
+    }
+    </script>
+
+    <script src="https://webgl2fundamentals.org/webgl/resources/webgl-utils.js"></script>
+    <script src="https://webgl2fundamentals.org/webgl/resources/m3.js"></script>
+    <script src="./app.js"></script>
+</body>
+</html>
