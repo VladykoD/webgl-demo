@@ -35,6 +35,7 @@
 
    let positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
    let resolutionUniformLocation = gl.getUniformLocation(program, 'u_resolution');
+   let translationLocation = gl.getUniformLocation(program, 'u_translation');
    let colorLocation = gl.getUniformLocation(program, 'u_color');
 
    let positionBuffer = gl.createBuffer();
@@ -81,13 +82,15 @@
 
       gl.uniform2f(resolutionUniformLocation, canvas.width, canvas.height);
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-      setRectangle(gl, translation[0], translation[1], width, height);
+      setGeometry(gl, translation[0], translation[1], width, height )
+      //setRectangle(gl, translation[0], translation[1], width, height);
 
       gl.uniform4fv(colorLocation, color);
+      gl.uniform2fv(translationLocation, translation);
 
       let primitiveType = gl.TRIANGLES;
       let offset = 0;
-      let count = 6;
+      let count = 18;
       gl.drawArrays(primitiveType, offset, count)
 
       //requestAnimationFrame(drawScene);
@@ -156,6 +159,39 @@
       ]), gl.STATIC_DRAW);
    }
 
+   function setGeometry(gl) {
+      gl.bufferData(
+          gl.ARRAY_BUFFER,
+          new Float32Array([
+             // left column
+             0, 0,
+             30, 0,
+             0, 150,
+             0, 150,
+             30, 0,
+             30, 150,
+
+             // top rung
+             30, 0,
+             100, 0,
+             30, 30,
+             30, 30,
+             100, 0,
+             100, 30,
+
+             // middle rung
+             30, 60,
+             67, 60,
+             30, 90,
+             30, 90,
+             67, 60,
+             67, 90]),
+          gl.STATIC_DRAW);
+
+   }
+
+
+   setGeometry(gl);
    drawScene();
 
 })();
