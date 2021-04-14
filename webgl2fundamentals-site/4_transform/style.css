@@ -1,0 +1,26 @@
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+canvas {
+  width: 100vw;
+  height: 100vh;
+}
+
+
+#uiContainer {
+  position: absolute;
+  z-index: 10;
+  top: 50px;
+  right: 50px;
+}
+
+.gman-widget-label,
+.gman-widget-value {
+  display: inline;
+}
+.gman-widget-slider {
+  display: block;
+}
