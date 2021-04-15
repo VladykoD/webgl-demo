@@ -86,6 +86,13 @@
          drawScene();
       };
    }
+   function updateAngle(event, ui) {
+      let angleInDegrees = 360 - ui.value;
+      let angleInRadians = angleInDegrees * Math.PI / 180;
+      rotation[0] = Math.sin(angleInRadians);
+      rotation[1] = Math.cos(angleInRadians);
+      drawScene();
+   }
 
    function drawScene() {
       webglUtils.resizeCanvasToDisplaySize(gl.canvas);
@@ -142,4 +149,11 @@ function setGeometry(gl) {
           67, 90]),
        gl.STATIC_DRAW);
 
+}
+
+function printSineAndCosineForAnAngle(angleInDegrees) {
+   var angleInRadians = angleInDegrees * Math.PI / 180;
+   var s = Math.sin(angleInRadians);
+   var c = Math.cos(angleInRadians);
+   console.log("s = " + s + " c = " + c);
 }
