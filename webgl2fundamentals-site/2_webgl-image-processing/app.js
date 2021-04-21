@@ -109,6 +109,7 @@ function render(image) {
    let imageLocation = gl.getUniformLocation(program, 'u_image');
    let kernelLocation = gl.getUniformLocation(program, "u_kernel[0]");
    let kernelWeightLocation = gl.getUniformLocation(program, "u_kernelWeight");
+   let flipYLocation = gl.getUniformLocation(program, 'u_flipY');
 
    //vao = Vertex Array Object
    let vao = gl.createVertexArray();
@@ -304,10 +305,13 @@ function render(image) {
       gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
       gl.uniform1i(imageLocation, 0);
 
+      gl.uniform1f(flipYLocation, 1);
+
       gl.uniform1fv(kernelLocation, kernels[name]);
       gl.uniform1f(kernelWeightLocation, computeKernelWeight(kernels[name]));
 
 
+      gl.uniform1f(flipYLocation, -1);
       let primitiveType = gl.TRIANGLES;
       let count = 6;
       gl.drawArrays(primitiveType, offset, count);
