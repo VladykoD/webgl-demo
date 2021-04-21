@@ -1,182 +1,136 @@
-'use strict'
+const CANVAS = document.getElementById('canvas');
+const GL = CANVAS.getContext('webgl');
 
-let vertexShaderSource = `#version 300 es
- 
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec2 a_position;
-in vec2 a_texCoord;
+let PROGRAM;
 
-//resolution of the canvas
-uniform vec2 u_resolution;
 
-//pass the texture coordinates to the fragment shader
-out vec2 v_texCoord;
- 
-// all shaders have a main function
-void main() {
-   vec2 zeroToOne = a_position / u_resolution;
-   vec2 zeroToTwo = zeroToOne * 2.0;
-   vec2 clipSpace = zeroToTwo - 1.0;
-   
-   gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
-   v_texCoord = a_texCoord;
+main();
+
+function main() {
+   clearCanvas();
+   createPlane();
+   createProgram();
+   createTexture();
+   updateCanvasSize();
+   initEventListeners();
+   draw();
 }
-`;
 
-let fragmentShaderSource = `#version 300 es
- 
-precision highp float;
 
-//our texture
-uniform sampler2D u_image;
-
-in vec2 v_texCoord;
-out vec4 outColor;
- 
-void main() {
-  outColor = texture(u_image, v_texCoord);
+function clearCanvas() {
+   GL.clearColor(0.26, 1, 0.93, 1.0);
+   GL.clear(GL.COLOR_BUFFER_BIT);
 }
-`;
 
 
-let image = new Image();
-image.src = './image_tex.jpg';
-image.onload = function () {
-   render(image);
-};
+function createPlane() {
+   GL.bindBuffer(GL.ARRAY_BUFFER, GL.createBuffer());
+   GL.bufferData(
+       GL.ARRAY_BUFFER,
+       new Float32Array([
+          -1, -1,
+          -1,  1,
+          1, -1,
+          1,  1
+       ]),
+       GL.STATIC_DRAW
+   );
+}
 
 
-function render(image) {
-   let canvas = document.querySelector('canvas');
+function createProgram() {
 
-   let gl = canvas.getContext('webgl2');
-   if (!gl) {
-      console.log("Failed to get WebGL context. \nYour browser or device may not support WebGL.");
-      return null;
+   let source = document.querySelector('#vertex-shader').innerHTML;
+   let vertexShader = GL.createShader(GL.VERTEX_SHADER);
+   GL.shaderSource(vertexShader, source);
+   GL.compileShader(vertexShader);
+
+   if(!GL.getShaderParameter(vertexShader, GL.COMPILE_STATUS)) {
+      console.error('ERROR! compiling vertex shader', GL.getShaderInfoLog(vertexShader))
+      return;
    }
 
-   let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
-   let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+   source = document.querySelector('#fragment-shader').innerHTML;
+   let fragmentShader = GL.createShader(GL.FRAGMENT_SHADER);
+   GL.shaderSource(fragmentShader, source);
+   GL.compileShader(fragmentShader);
 
-   let program = createProgram(gl, vertexShader, fragmentShader);
-
-   //needed data for vertext
-   let positionAttributeLocation = gl.getAttribLocation(program, 'a_position');
-   let texCoordAttributeLocation = gl.getAttribLocation(program, 'a_texCoord');
-
-   //uniforms
-   let resolutionLocation = gl.getUniformLocation(program, 'u_resolution');
-   let imageLocation = gl.getUniformLocation(program, 'u_image');
-
-   //vao = Vertex Array Object
-   let vao = gl.createVertexArray();
-   gl.bindVertexArray(vao);
-   let positionBuffer = gl.createBuffer();
-   gl.enableVertexAttribArray(positionAttributeLocation);
-   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-   //pull the data out
-   let size = 2;  // 2 components per iteration
-   let type = gl.FLOAT;
-   let normalize = false;
-   let stride = 0;
-   let offset = 0;
-   gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset);
-
-   let texCoordBuffer = gl.createBuffer();
-   gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      0, 0,
-      1.0, 0,
-      0.0, 1.0,
-      0.0, 1.0,
-      1.0, 0.0,
-      1.0, 1.0,
-   ]), gl.STATIC_DRAW);
-
-   gl.enableVertexAttribArray(texCoordAttributeLocation);
-
-   gl.vertexAttribPointer(texCoordAttributeLocation, size, type, normalize, stride, offset);
-
-   let texture = gl.createTexture();
-   gl.activeTexture(gl.TEXTURE0 + 0);
-
-   gl.bindTexture(gl.TEXTURE_2D, texture);
-
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-   let mipLevel = 0; //largest mip
-   let internalFormat = gl.RGBA; //format we want in the texture
-   let srcFormat = gl.RGBA;
-   let srcType = gl.UNSIGNED_BYTE;
-   gl.texImage2D(gl.TEXTURE_2D, mipLevel, internalFormat,
-       srcFormat, srcType, image);
-
-   canvas.width = canvas.clientWidth;
-   canvas.height = canvas.clientHeight;
-
-   gl.viewport(0,0,gl.drawingBufferWidth, gl.drawingBufferHeight)
-   gl.clearColor(0, 0, 0, 0);
-   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-   gl.useProgram(program);
-   gl.bindVertexArray(vao);
-
-   gl.uniform2f(resolutionLocation, gl.drawingBufferWidth, gl.drawingBufferHeight);
-
-   gl.uniform1i(imageLocation, 0);
-   gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-
-   setRectangle(gl, 0,0,gl.drawingBufferWidth, gl.drawingBufferHeight);
-
-   let primitiveType = gl.TRIANGLES;
-   let count = 6;
-   gl.drawArrays(primitiveType, offset, count);
-}
-
-function setRectangle(gl, x, y, width, height) {
-   let x1 = x;
-   let x2 = x + width;
-   let y1 = y;
-   let y2 = y + height;
-
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
-      x1, y1,
-      x2, y1,
-      x1, y2,
-      x1, y2,
-      x2, y1,
-      x2, y2,
-   ]), gl.STATIC_DRAW)
-}
-
-function createShader(gl, type, source) {
-   let shader = gl.createShader(type);
-   gl.shaderSource(shader, source);
-   gl.compileShader(shader);
-   let success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-   if (success) {
-      return shader;
+   if(!GL.getShaderParameter(fragmentShader, GL.COMPILE_STATUS)) {
+      console.error('ERROR! compiling fragment shader', GL.getShaderInfoLog(fragmentShader))
+      return;
    }
 
-   console.log(gl.getShaderInfoLog(shader));
-   gl.deleteShader(shader);
+   PROGRAM = GL.createProgram();
+
+   GL.attachShader(PROGRAM, vertexShader);
+   GL.attachShader(PROGRAM, fragmentShader);
+   GL.linkProgram(PROGRAM);
+
+   if (!GL.getProgramParameter(PROGRAM, GL.LINK_STATUS)) {
+      let linkErrLog = GL.getProgramInfoLog(PROGRAM);
+      console.log('Shader program did not link successfully. Error log: \n' + linkErrLog)
+      return;
+   }
+
+   GL.detachShader(PROGRAM, vertexShader);
+   GL.detachShader(PROGRAM, fragmentShader);
+
+   GL.deleteShader(vertexShader)
+   GL.deleteShader(fragmentShader)
+
+
+   const vertexPositionAttribute = GL.getAttribLocation(PROGRAM, 'a_position');
+
+   GL.enableVertexAttribArray(vertexPositionAttribute);
+   GL.vertexAttribPointer(vertexPositionAttribute, 2, GL.FLOAT, false, 0, 0);
+
+   GL.useProgram(PROGRAM);
 }
 
-function createProgram(gl, vertexShader, fragmentShader) {
-   let program = gl.createProgram();
+function createTexture() {
+   const image = new Image();
 
-   gl.attachShader(program, vertexShader);
-   gl.attachShader(program, fragmentShader);
+   image.crossOrigin = 'anonymous';
 
-   gl.linkProgram(program);
-   let success = gl.getProgramParameter(program, gl.LINK_STATUS);
-   if (success) return program;
+   image.onload = () => {
+      const texture = GL.createTexture();
 
-   console.log(gl.getShaderInfoLog(program));
-   gl.deleteProgram(program)
+      GL.activeTexture(GL.TEXTURE0);
+      GL.bindTexture(GL.TEXTURE_2D, texture);
+      GL.pixelStorei(GL.UNPACK_FLIP_Y_WEBGL, true);
+      GL.texImage2D(GL.TEXTURE_2D, 0, GL.RGB, GL.RGB, GL.UNSIGNED_BYTE, image);
+      GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_S, GL.CLAMP_TO_EDGE);
+      GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_WRAP_T, GL.CLAMP_TO_EDGE);
+      GL.texParameteri(GL.TEXTURE_2D, GL.TEXTURE_MIN_FILTER, GL.LINEAR);
+
+      GL.uniform1i(GL.getUniformLocation(PROGRAM, 'u_texture'), 0);
+   };
+
+   image.src = './image_tex.jpg';
+}
+
+
+
+function updateCanvasSize() {
+
+   CANVAS.height = window.innerHeight;
+   CANVAS.width = window.innerWidth;
+
+   GL.viewport(0, 0, GL.canvas.width, GL.canvas.height);
+   GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_canvas_size'),
+       Math.max(CANVAS.height, CANVAS.width));
+}
+
+
+function initEventListeners() {
+   window.addEventListener('resize', updateCanvasSize);
+}
+
+
+function draw(timeStamp) {
+   GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_time'), timeStamp / 1000.0);
+
+   GL.drawArrays(GL.TRIANGLE_STRIP, 0, 4);
+
+   requestAnimationFrame(draw);
 }

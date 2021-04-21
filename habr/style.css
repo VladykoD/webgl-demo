@@ -1,17 +1,14 @@
-body {
+* {
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  box-sizing: border-box;
 }
 
 canvas {
-  width: 100vw;
-  height: 100vh;
+  display: block;
 }
 
-
-#uiContainer {
-  position: fixed;
-  top: 50px;
-  left: 50px;
+body {
+  overflow: hidden;
+  background-color: #ffecc2;
 }

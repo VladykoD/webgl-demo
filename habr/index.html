@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>filters</title>
+    <title>Введение в программирование шейдеров для верстальщиков</title>
     <link rel="shortcut icon" href="favicon.ico">
 
     <link rel="stylesheet" href="style.css">
@@ -12,8 +12,28 @@
     <!--  source https://habr.com/ru/post/420847/ -->
 
 
-    <canvas>Your browser does not seem to support
+    <canvas id="canvas">Your browser does not seem to support
         HTML5 canvas.</canvas>
+
+    <script id="vertex-shader" type="x-shader/x-vertex">
+        precision mediump float;
+        attribute vec2 a_position;
+
+        void main() {
+            gl_Position = vec4(a_position, 0, 1);
+        }
+    </script>
+
+    <script id="fragment-shader" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform sampler2D u_texture;
+        uniform float u_canvas_size;
+
+        void main() {
+            gl_FragColor = texture2D(u_texture, gl_FragCoord.xy / u_canvas_size);
+        }
+    </script>
 
     <script type="text/javascript" src="app.js"></script>
 </body>
