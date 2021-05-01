@@ -28,10 +28,16 @@
         precision mediump float;
 
         uniform sampler2D u_texture;
+        uniform float u_time;
         uniform float u_canvas_size;
 
+        float rand(vec2 seed) {
+            return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453123);
+        }
+
         void main() {
-            gl_FragColor = texture2D(u_texture, gl_FragCoord.xy / u_canvas_size);
+            gl_FragColor = texture2D(u_texture, gl_FragCoord.xx / u_canvas_size
+            + rand(gl_FragCoord.xy + vec2(sin(u_time))) / 100.0);
         }
     </script>
 
