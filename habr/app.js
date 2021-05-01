@@ -106,7 +106,7 @@ function createTexture() {
       GL.uniform1i(GL.getUniformLocation(PROGRAM, 'u_texture'), 0);
    };
 
-   image.src = './image_tex.jpg';
+   image.src = './img1.jpg';
 }
 
 
