@@ -12,43 +12,74 @@
     <!--  source https://habr.com/ru/post/420847/ -->
 
 
-    <canvas id="canvas">Your browser does not seem to support
-        HTML5 canvas.</canvas>
-
-    <script id="vertex-shader" type="x-shader/x-vertex">
-        precision mediump float;
+    <canvas id="canvas"></canvas>
+    <div id="uiContainer">
+        <div id="ui"></div>
+    </div>
+    <!-- vertex shader -->
+    <script  id="vertex-shader-2d" type="x-shader/x-vertex">
         attribute vec2 a_position;
+        attribute vec2 a_texCoord;
+
+        uniform vec2 u_resolution;
+
+        varying vec2 v_texCoord;
 
         void main() {
-            gl_Position = vec4(a_position, 0, 1);
+            // convert the rectangle from pixels to 0.0 to 1.0
+            vec2 zeroToOne = a_position / u_resolution;
+
+            // convert from 0->1 to 0->2
+            vec2 zeroToTwo = zeroToOne * 2.0;
+
+            // convert from 0->2 to -1->+1 (clipspace)
+            vec2 clipSpace = zeroToTwo - 1.0;
+
+            gl_Position = vec4(clipSpace * vec2(1, -1), 0, 1);
+
+            // pass the texCoord to the fragment shader
+            // The GPU will interpolate this value between points.
+            v_texCoord = a_texCoord;
         }
     </script>
-
-    <script id="fragment-shader" type="x-shader/x-fragment">
+    <!-- fragment shader -->
+    <script  id="fragment-shader-2d" type="x-shader/x-fragment">
         precision mediump float;
 
+        // our texture
         uniform sampler2D u_image;
-        uniform float u_canvas_size;
-
-        uniform float u_intensity;
+        uniform vec2 u_textureSize;
+        uniform float u_kernel[9];
+        uniform float u_kernelWeight;
         uniform vec2 u_mouse_position;
 
+        uniform float u_canvas_size;
+        uniform float u_intensity;
+        varying vec2 v_texCoord;
+        uniform float u_time;
+
         void main() {
-            vec2 v_texCoord = gl_FragCoord.xy / u_canvas_size;
-            vec2 direction = u_mouse_position / u_canvas_size - v_texCoord;
+            vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
+            vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
+            vec2 direction = u_mouse_position / u_canvas_size - texture_coord;
             float dist = distance(gl_FragCoord.xy, u_mouse_position) / u_canvas_size * 5.0;
 
             if (dist < 0.4) {
                 gl_FragColor = texture2D(
-                u_image,
-                v_texCoord + u_intensity * direction * dist * 1.0
+                    u_image,
+                    texture_coord + u_intensity * direction * dist * 1.2
                 );
             } else {
                 gl_FragColor = texture2D(u_image, v_texCoord);
             }
+
+            gl_FragColor = texture2D(u_image,
+              texture_coord + u_intensity * direction * dist * 1.2
+            );
         }
     </script>
 
+    <script src="https://webglfundamentals.org/webgl/resources/webgl-utils.js"></script>
     <script type="text/javascript" src="app.js"></script>
 </body>
 </html>
