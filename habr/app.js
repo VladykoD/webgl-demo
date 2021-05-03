@@ -3,6 +3,9 @@ const GL = CANVAS.getContext('webgl');
 
 let PROGRAM;
 
+let is_active = true;
+let intensity = 1;
+
 
 main();
 
@@ -124,11 +127,32 @@ function updateCanvasSize() {
 
 function initEventListeners() {
    window.addEventListener('resize', updateCanvasSize);
+
+   CANVAS.addEventListener('mouseover', () => {
+      is_active = false;
+   })
+   CANVAS.addEventListener('mouseout', () => {
+      is_active = true;
+   })
 }
 
 
 function draw(timeStamp) {
    GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_time'), timeStamp / 1000.0);
+   GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_intensity'), intensity);
+
+   if (is_active) {
+      GL.drawArrays(GL.TRIANGLE_STRIP, 0,4);
+
+      if (intensity < 1) {
+         intensity += 0.01;
+      }
+   } else {
+      if (intensity > 0) {
+         intensity -= 0.05;
+         GL.drawArrays(GL.TRIANGLE_STRIP,0,4)
+      }
+   }
 
    GL.drawArrays(GL.TRIANGLE_STRIP, 0, 4);
 
