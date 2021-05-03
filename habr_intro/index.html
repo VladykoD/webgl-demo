@@ -39,8 +39,7 @@
 
             if (dist < 0.4) {
                 gl_FragColor = texture2D(u_texture,
-                texture_coord
-                + u_intensity * direction * dist * 1.2
+                texture_coord + u_intensity * direction * dist * 1.2
                 );
             } else {
                 gl_FragColor = texture2D(u_texture, texture_coord);
