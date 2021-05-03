@@ -33,14 +33,13 @@
         uniform vec2 u_mouse_position;
 
         void main() {
-            vec2 onePixel = vec2(1.0, 1.0) / u_textureSize;
             vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
             vec2 direction = u_mouse_position / u_canvas_size - texture_coord;
             float dist = distance(gl_FragCoord.xy, u_mouse_position) / u_canvas_size * 5.0;
 
             if (dist < 0.4) {
                 gl_FragColor = texture2D(u_texture,
-                texture_coord + u_intensity * direction * dist * 11.2
+                texture_coord + u_intensity * direction * dist * 1.2
                 );
             } else {
                 gl_FragColor = texture2D(u_texture, texture_coord);
