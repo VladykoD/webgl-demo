@@ -129,11 +129,23 @@ function initEventListeners() {
    window.addEventListener('resize', updateCanvasSize);
 
    CANVAS.addEventListener('mouseover', () => {
-      is_active = false;
-   })
-   CANVAS.addEventListener('mouseout', () => {
       is_active = true;
    })
+   CANVAS.addEventListener('mouseout', () => {
+      is_active = false;
+   })
+
+   CANVAS.addEventListener('mousemove', (e) => {
+      let rect = CANVAS.getBoundingClientRect();
+
+      let mouse_position = [
+          e.clientX - rect.left,
+          rect.height - (e.clientY - rect.top)
+      ];
+
+      GL.uniform2fv(GL.getUniformLocation(PROGRAM, 'u_mouse_position'), mouse_position)
+   })
+
 }
 
 
