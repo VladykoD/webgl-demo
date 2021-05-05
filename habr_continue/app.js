@@ -3,9 +3,6 @@ const GL = CANVAS.getContext('webgl');
 
 let PROGRAM;
 
-let is_active = true;
-let intensity = 1;
-
 
 main();
 
@@ -109,7 +106,7 @@ function createTexture() {
       GL.uniform1i(GL.getUniformLocation(PROGRAM, 'u_texture'), 0);
    };
 
-   image.src = './img1.jpg';
+   image.src = './image_tex.jpg';
 }
 
 
@@ -127,44 +124,11 @@ function updateCanvasSize() {
 
 function initEventListeners() {
    window.addEventListener('resize', updateCanvasSize);
-
-   CANVAS.addEventListener('mouseover', () => {
-      is_active = true;
-   })
-   CANVAS.addEventListener('mouseout', () => {
-      is_active = false;
-   })
-
-   CANVAS.addEventListener('mousemove', (e) => {
-      let rect = CANVAS.getBoundingClientRect();
-
-      let mouse_position = [
-          e.clientX - rect.left,
-          rect.height - (e.clientY - rect.top)
-      ];
-
-      GL.uniform2fv(GL.getUniformLocation(PROGRAM, 'u_mouse_position'), mouse_position)
-   })
-
 }
 
 
 function draw(timeStamp) {
    GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_time'), timeStamp / 1000.0);
-   GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_intensity'), intensity);
-
-   if (is_active) {
-      GL.drawArrays(GL.TRIANGLE_STRIP, 0,4);
-
-      if (intensity < 1) {
-         intensity += 0.01;
-      }
-   } else {
-      if (intensity > 0) {
-         intensity -= 0.05;
-         GL.drawArrays(GL.TRIANGLE_STRIP,0,4)
-      }
-   }
 
    GL.drawArrays(GL.TRIANGLE_STRIP, 0, 4);
 
