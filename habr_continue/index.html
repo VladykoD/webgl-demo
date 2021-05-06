@@ -27,11 +27,30 @@
     <script id="fragment-shader" type="x-shader/x-fragment">
         precision mediump float;
 
+        #define NUMBER_OF_POINTS 10
+        #define WHITE vec4(1.0)
+        #define BLACK vec4(vec3(0.0), 1.0)
+
         uniform sampler2D u_texture;
         uniform float u_canvas_size;
+        uniform vec2 u_points[NUMBER_OF_POINTS];
 
         void main() {
-            gl_FragColor = texture2D(u_texture, gl_FragCoord.xy / u_canvas_size);
+            vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
+
+            gl_FragColor = texture2D(u_texture, texture_coord);
+
+            for (int i = 0; i < NUMBER_OF_POINTS; i++) {
+                if (distance(texture_coord, u_points[i]) < 0.02) {
+                    gl_FragColor = WHITE;
+
+                    if (distance(texture_coord, u_points[i]) < 0.01) {
+                        gl_FragColor = BLACK;
+                    }
+
+                    break;
+                }
+            }
         }
     </script>
 

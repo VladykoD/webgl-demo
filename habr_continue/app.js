@@ -1,10 +1,22 @@
-const CANVAS = document.getElementById('canvas');
-const GL = CANVAS.getContext('webgl');
+const IDs = {
+   canvas: 'canvas',
+   shaders: {
+      vertex: 'vertex-shader',
+      fragment: 'fragment-shader'
+   }
+};
+
+const CANVAS = document.getElementById(IDs.canvas);
+const GL = canvas.getContext('webgl');
 
 let PROGRAM;
 
+const NUMBER_OF_POINTS = 10;
+let POINTS = [];
+
 
 main();
+
 
 function main() {
    clearCanvas();
@@ -13,6 +25,7 @@ function main() {
    createTexture();
    updateCanvasSize();
    initEventListeners();
+   createPoints();
    draw();
 }
 
@@ -39,45 +52,13 @@ function createPlane() {
 
 
 function createProgram() {
-
-   let source = document.querySelector('#vertex-shader').innerHTML;
-   let vertexShader = GL.createShader(GL.VERTEX_SHADER);
-   GL.shaderSource(vertexShader, source);
-   GL.compileShader(vertexShader);
-
-   if(!GL.getShaderParameter(vertexShader, GL.COMPILE_STATUS)) {
-      console.error('ERROR! compiling vertex shader', GL.getShaderInfoLog(vertexShader))
-      return;
-   }
-
-   source = document.querySelector('#fragment-shader').innerHTML;
-   let fragmentShader = GL.createShader(GL.FRAGMENT_SHADER);
-   GL.shaderSource(fragmentShader, source);
-   GL.compileShader(fragmentShader);
-
-   if(!GL.getShaderParameter(fragmentShader, GL.COMPILE_STATUS)) {
-      console.error('ERROR! compiling fragment shader', GL.getShaderInfoLog(fragmentShader))
-      return;
-   }
+   const shaders = getShaders();
 
    PROGRAM = GL.createProgram();
 
-   GL.attachShader(PROGRAM, vertexShader);
-   GL.attachShader(PROGRAM, fragmentShader);
+   GL.attachShader(PROGRAM, shaders.vertex);
+   GL.attachShader(PROGRAM, shaders.fragment);
    GL.linkProgram(PROGRAM);
-
-   if (!GL.getProgramParameter(PROGRAM, GL.LINK_STATUS)) {
-      let linkErrLog = GL.getProgramInfoLog(PROGRAM);
-      console.log('Shader program did not link successfully. Error log: \n' + linkErrLog)
-      return;
-   }
-
-   GL.detachShader(PROGRAM, vertexShader);
-   GL.detachShader(PROGRAM, fragmentShader);
-
-   GL.deleteShader(vertexShader)
-   GL.deleteShader(fragmentShader)
-
 
    const vertexPositionAttribute = GL.getAttribLocation(PROGRAM, 'a_position');
 
@@ -86,6 +67,33 @@ function createProgram() {
 
    GL.useProgram(PROGRAM);
 }
+
+
+function getShaders() {
+   return {
+      vertex: compileShader(
+          GL.VERTEX_SHADER,
+          document.getElementById(IDs.shaders.vertex).textContent
+      ),
+      fragment: compileShader(
+          GL.FRAGMENT_SHADER,
+          document.getElementById(IDs.shaders.fragment).textContent
+      )
+   };
+}
+
+
+function compileShader(type, source) {
+   const shader = GL.createShader(type);
+
+   GL.shaderSource(shader, source);
+   GL.compileShader(shader);
+
+   console.log(GL.getShaderInfoLog(shader));
+
+   return shader;
+}
+
 
 function createTexture() {
    const image = new Image();
@@ -106,13 +114,12 @@ function createTexture() {
       GL.uniform1i(GL.getUniformLocation(PROGRAM, 'u_texture'), 0);
    };
 
-   image.src = './image_tex.jpg';
+   image.src = './img1.jpg';
 }
 
 
 
 function updateCanvasSize() {
-
    CANVAS.height = window.innerHeight;
    CANVAS.width = window.innerWidth;
 
@@ -127,8 +134,19 @@ function initEventListeners() {
 }
 
 
+function createPoints() {
+   for (let i = 0; i < NUMBER_OF_POINTS; i++) {
+      POINTS.push([Math.random(), Math.random()]);
+   }
+}
+
+
 function draw(timeStamp) {
    GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_time'), timeStamp / 1000.0);
+
+   for (let i = 0; i < NUMBER_OF_POINTS; i++) {
+      GL.uniform2fv(GL.getUniformLocation(PROGRAM, 'u_points[' + i + ']'), POINTS[i]);
+   }
 
    GL.drawArrays(GL.TRIANGLE_STRIP, 0, 4);
 
