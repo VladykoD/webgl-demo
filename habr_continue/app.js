@@ -140,9 +140,19 @@ function createPoints() {
    }
 }
 
+function movePoints(timeStamp) {
+   if (timeStamp) {
+      for (let i = 0; i < NUMBER_OF_POINTS; i++) {
+         POINTS[i][0] += Math.sin(i * timeStamp / 5000.0) / 500.0;
+         POINTS[i][1] += Math.cos(i * timeStamp / 5000.0) / 500.0;
+      }
+   }
+}
 
 function draw(timeStamp) {
    GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_time'), timeStamp / 1000.0);
+
+   movePoints(timeStamp);
 
    for (let i = 0; i < NUMBER_OF_POINTS; i++) {
       GL.uniform2fv(GL.getUniformLocation(PROGRAM, 'u_points[' + i + ']'), POINTS[i]);

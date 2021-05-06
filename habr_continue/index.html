@@ -28,8 +28,7 @@
         precision mediump float;
 
         #define NUMBER_OF_POINTS 10
-        #define WHITE vec4(1.0)
-        #define BLACK vec4(vec3(0.0), 1.0)
+        #define EPSILON 0.005
 
         uniform sampler2D u_texture;
         uniform float u_canvas_size;
@@ -38,18 +37,36 @@
         void main() {
             vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
 
-            gl_FragColor = texture2D(u_texture, texture_coord);
+            float min_distance = 1.0;
+            int area_index = 0;
 
             for (int i = 0; i < NUMBER_OF_POINTS; i++) {
-                if (distance(texture_coord, u_points[i]) < 0.02) {
-                    gl_FragColor = WHITE;
+                float current_distance = distance(texture_coord, u_points[i]);
 
-                    if (distance(texture_coord, u_points[i]) < 0.01) {
-                        gl_FragColor = BLACK;
-                    }
-
-                    break;
+                if (current_distance < min_distance) {
+                    min_distance = current_distance;
+                    area_index = i;
                 }
+            }
+
+            gl_FragColor = texture2D(u_texture, texture_coord);
+            gl_FragColor.g = abs(sin(float(area_index)));
+            gl_FragColor.b = abs(sin(float(area_index)));
+
+            if (min_distance < 0.01) {
+                gl_FragColor.rgb = vec3(1.0);
+            }
+
+            int number_of_near_points = 0;
+
+            for (int i = 0; i < NUMBER_OF_POINTS; i++) {
+                if (distance(texture_coord, u_points[i]) < min_distance + EPSILON) {
+                   number_of_near_points++;
+                }
+            }
+
+            if (number_of_near_points > 1) {
+                gl_FragColor.rgb = vec3(1.0);
             }
         }
     </script>
