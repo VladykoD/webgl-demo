@@ -9,7 +9,7 @@ const IDs = {
 
 const URLS = {
    textures: [
-      'red.jpg',
+      'img1.jpg',
       'orange.jpg',
    ]
 };

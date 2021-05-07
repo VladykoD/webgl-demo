@@ -28,35 +28,19 @@
         precision mediump float;
 
         #define NUMBER_OF_TEXTURES 3
-        #define AMPLITUDE 0.05
-        #define FREQUENCY 2.0
-        #define SPEED -2.0
-        #define EPSILON 0.01
 
         uniform sampler2D u_textures[NUMBER_OF_TEXTURES];
         uniform float u_canvas_size;
-        uniform float u_time;
+        uniform vec2 u_mouse_position;
 
         void main() {
             vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
 
-            float time = u_time * SPEED;
-            float x = (sin(texture_coord.y * FREQUENCY)
-            + sin(texture_coord.y * FREQUENCY * 2.1    + time)
-            + sin(texture_coord.y * FREQUENCY * 1.72   + time * 1.121)
-            + sin(texture_coord.y * FREQUENCY * 4.221  + time * 0.437)
-            + sin(texture_coord.y * FREQUENCY * 6.1122 + time * 4.269))
-            * AMPLITUDE;
-
-            if (texture_coord.x - 0.5 > x) {
-                gl_FragColor = texture2D(u_textures[0], texture_coord);
-            } else {
-                gl_FragColor = texture2D(u_textures[1], texture_coord);
-            }
-
-            if (abs(texture_coord.x - 0.5 - x) < EPSILON) {
-                gl_FragColor.rgb = vec3(0.0);
-            }
+            gl_FragColor = mix(
+            texture2D(u_textures[0], texture_coord),
+            texture2D(u_textures[1], texture_coord),
+            abs(sin(length(texture_coord - u_mouse_position / u_canvas_size)))
+            );
         }
     </script>
 
