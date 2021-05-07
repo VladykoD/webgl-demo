@@ -11,7 +11,6 @@ const URLS = {
    textures: [
       'red.jpg',
       'orange.jpg',
-      'yellow.jpg',
    ]
 };
 
@@ -35,7 +34,6 @@ function main() {
    createTextures();
    updateCanvasSize();
    initEventListeners();
-   createPoints();
    draw();
 }
 
@@ -148,50 +146,22 @@ function updateCanvasSize() {
 
 function initEventListeners() {
    window.addEventListener('resize', updateCanvasSize);
-}
 
+   document.addEventListener("mousemove", (e) => {
+      let rect = CANVAS.getBoundingClientRect();
 
-function createPoints() {
-   for (let i = 0; i < NUMBER_OF_POINTS; i++) {
-      POINTS.push([Math.random(), Math.random()]);
-   }
-}
+      MOUSE_POSITION = [
+        e.clientX - rect.left,
+        rect.height - (e.clientY - rect.top)
+      ];
 
-
-function movePoints(timeStamp) {
-   if (timeStamp) {
-      for (let i = 0; i < NUMBER_OF_POINTS; i++) {
-         POINTS[i][0] += Math.sin(i * timeStamp / 5000) / 500;
-         POINTS[i][1] += Math.cos(i * timeStamp / 5000) / 500;
-      }
-
-
-      for (let i = 0; i < NUMBER_OF_POINTS; i++) {
-         for (let j = i; j < NUMBER_OF_POINTS; j++) {
-            let deltaX = POINTS[i][0] - POINTS[j][0];
-            let deltaY = POINTS[i][1] - POINTS[j][1];
-            let distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-            if (distance < 0.1) {
-               POINTS[i][0] += 0.001 * Math.sign(deltaX);
-               POINTS[i][1] += 0.001 * Math.sign(deltaY);
-               POINTS[j][0] -= 0.001 * Math.sign(deltaX);
-               POINTS[j][1] -= 0.001 * Math.sign(deltaY);
-            }
-         }
-      }
-   }
+      GL.uniform2fv(GL.getUniformLocation(PROGRAM, 'u_mouse_position'), MOUSE_POSITION);
+   })
 }
 
 
 function draw(timeStamp) {
    GL.uniform1f(GL.getUniformLocation(PROGRAM, 'u_time'), timeStamp / 1000.0);
-
-   movePoints(timeStamp);
-
-   for (let i = 0; i < NUMBER_OF_POINTS; i++) {
-      GL.uniform2fv(GL.getUniformLocation(PROGRAM, 'u_points[' + i + ']'), POINTS[i]);
-   }
 
    GL.drawArrays(GL.TRIANGLE_STRIP, 0, 4);
 
