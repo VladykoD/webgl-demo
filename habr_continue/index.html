@@ -27,20 +27,25 @@
     <script id='fragment-shader' type='x-shader/x-fragment'>
         precision mediump float;
 
-        #define NUMBER_OF_TEXTURES 3
-
-        uniform sampler2D u_textures[NUMBER_OF_TEXTURES];
+        uniform sampler2D u_texture;
         uniform float u_canvas_size;
         uniform vec2 u_mouse_position;
+        uniform vec2 u_time;
 
         void main() {
             vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
 
-            gl_FragColor = mix(
-            texture2D(u_textures[0], texture_coord),
-            texture2D(u_textures[1], texture_coord),
-            abs(sin(length(texture_coord - u_mouse_position / u_canvas_size)))
-            );
+            gl_FragColor = texture2D(u_texture, texture_coord);
+            float dist = distance(texture_coord, u_mouse_position / u_canvas_size);
+
+            if (dist < 0.1) {
+                return;
+            }
+            float value = sin((texture_coord.y - texture_coord.x) * 300.0);
+
+            if (value < 0.0) {
+                gl_FragColor.rgb *= dist / 10.0;
+            }
         }
     </script>
 
