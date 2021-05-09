@@ -24,30 +24,30 @@
         }
     </script>
 
+
     <script id='fragment-shader' type='x-shader/x-fragment'>
         precision mediump float;
 
         uniform sampler2D u_texture;
         uniform float u_canvas_size;
+        uniform float u_time;
         uniform vec2 u_mouse_position;
-        uniform vec2 u_time;
 
         void main() {
             vec2 texture_coord = gl_FragCoord.xy / u_canvas_size;
+            float block_size = abs(sin(
+            length(texture_coord - u_mouse_position / u_canvas_size) * 2.0 - u_time)) / 100.0 + 0.001;
+            vec2 block_position = floor(texture_coord / block_size) * block_size;
 
-            gl_FragColor = texture2D(u_texture, texture_coord);
-            float dist = distance(texture_coord, u_mouse_position / u_canvas_size);
-
-            if (dist < 0.1) {
-                return;
-            }
-            float value = sin((texture_coord.y - texture_coord.x) * 300.0);
-
-            if (value < 0.0) {
-                gl_FragColor.rgb *= dist / 10.0;
-            }
+            gl_FragColor = (
+            texture2D(u_texture, block_position)
+            + texture2D(u_texture, block_position + vec2(1.0, 0.0) * block_size)
+            + texture2D(u_texture, block_position + vec2(0.0, 1.0) * block_size)
+            + texture2D(u_texture, block_position + vec2(1.0, 1.0) * block_size)
+            ) / 4.0;
         }
     </script>
+
 
 
     <script type="text/javascript" src="app.js"></script>
